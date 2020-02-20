@@ -107,8 +107,8 @@ public:
 	Eigen::Vector3f getR(int meshId);
 	Eigen::Vector3f getDes();
 	void set_rotation();
-	bool is_separate(Eigen::AlignedBox<double, 3> A_BOX, Eigen::AlignedBox<double, 3> B_BOX);
-	bool is_collide(igl::AABB<Eigen::MatrixXd, 3> * A_TREE, igl::AABB<Eigen::MatrixXd, 3> * B_TREE);
+	bool is_separate(Eigen::AlignedBox<double, 3> A_BOX, Eigen::AlignedBox<double, 3> B_BOX, int Aid, int Bid);
+	bool is_collide(igl::AABB<Eigen::MatrixXd, 3> * A_TREE, igl::AABB<Eigen::MatrixXd, 3> * B_TREE, int Aid, int Bid);
 	void Update_headCore();
 	bool checkFinish();
 	void buildLevel(int level, bool prev);

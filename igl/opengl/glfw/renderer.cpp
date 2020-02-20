@@ -358,7 +358,7 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 			Update_headCore();
 		}
 		Eigen::Vector3f ED = (D - E);
-		if (is_collide(&scn->tree_list[scn->num_of_cyl-1], &scn->tree_list[scn->last_picked])) {
+		if (is_collide(&scn->tree_list[scn->num_of_cyl-1], &scn->tree_list[scn->last_picked], scn->num_of_cyl - 1, scn->last_picked)) {
 			set_rotation();
 			set_color_dir();
 			scn->last_picked = -1;
@@ -437,13 +437,13 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 		}
 	}
 	//A_BOX = box of the head of the snake
-	bool Renderer::is_separate(Eigen::AlignedBox<double, 3> A_BOX, Eigen::AlignedBox<double, 3> B_BOX) {
-		Eigen::Matrix3d A = MakeParents(scn->num_of_cyl - 1).block<3, 3>(0, 0).cast<double>() * scn->data(scn->num_of_cyl - 1).GetRotation().cast<double>();
+	bool Renderer::is_separate(Eigen::AlignedBox<double, 3> A_BOX, Eigen::AlignedBox<double, 3> B_BOX, int Aid, int Bid) {
+		Eigen::Matrix3d A = MakeParents(Aid).block<3, 3>(0, 0).cast<double>() * scn->data(Aid).GetRotation().cast<double>();
 		Eigen::Vector3d A0 = A * Eigen::Vector3d(1, 0, 0);
 		Eigen::Vector3d A1 = A * Eigen::Vector3d(0, 1, 0);
 		Eigen::Vector3d A2 = A * Eigen::Vector3d(0, 0, 1);
 		
-		Eigen::Matrix3d B = scn->data(scn->last_picked).GetRotation().cast<double>();
+		Eigen::Matrix3d B = scn->data(Bid).GetRotation().cast<double>();
 		Eigen::Vector3d B0 = B * Eigen::Vector3d(1, 0, 0);
 		Eigen::Vector3d B1 = B * Eigen::Vector3d(0, 1, 0);
 		Eigen::Vector3d B2 = B * Eigen::Vector3d(0, 0, 1);
@@ -455,7 +455,7 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 		b = b / 2;
 		Eigen::Vector4d centerA = Eigen::Vector4d(A_BOX.center()[0], A_BOX.center()[1], A_BOX.center()[2], 1);
 		Eigen::Vector4d centerB = Eigen::Vector4d(B_BOX.center()[0], B_BOX.center()[1], B_BOX.center()[2], 1);
-		Eigen::Vector4d D4 = scn->data(scn->last_picked).MakeTrans().cast<double>() * centerB - (MakeParents(scn->num_of_cyl - 1).cast<double>() * scn->data(scn->num_of_cyl-1).MakeTrans().cast<double>() * centerA);
+		Eigen::Vector4d D4 = scn->data(Bid).MakeTrans().cast<double>() * centerB - (MakeParents(Aid).cast<double>() * scn->data(Aid).MakeTrans().cast<double>() * centerA);
 		Eigen::Vector3d D = D4.head(3);
 
 		if (!(a(0) + (b(0) * abs(C.row(0)(0)) + b(1) * abs(C.row(0)(1)) + b(2) * abs(C.row(0)(2))) < abs(A0.transpose() * D))) {
@@ -519,10 +519,10 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 		return true;
 	}
 
-	bool Renderer::is_collide(igl::AABB<Eigen::MatrixXd, 3> * A_TREE, igl::AABB<Eigen::MatrixXd, 3> * B_TREE) {
+	bool Renderer::is_collide(igl::AABB<Eigen::MatrixXd, 3> * A_TREE, igl::AABB<Eigen::MatrixXd, 3> * B_TREE, int Aid, int Bid) {
 		
 		if (A_TREE->is_leaf() && B_TREE->is_leaf()) {
-			if (!is_separate(A_TREE->m_box, B_TREE->m_box)) {
+			if (!is_separate(A_TREE->m_box, B_TREE->m_box, Aid, Bid)) {
 				PlaySound(TEXT("bite.wav"), NULL, SND_FILENAME | SND_ASYNC);
 				//scn->draw_box(A_TREE->m_box, scn->last_picked, false, Eigen::RowVector3d (1,1,1));
 				//scn->draw_box(B_TREE->m_box, !scn->last_picked, false, Eigen::RowVector3d (1,1,1));
@@ -532,21 +532,21 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 				return false;
 			}
 		}
-		if (is_separate(A_TREE->m_box, B_TREE->m_box)) {
+		if (is_separate(A_TREE->m_box, B_TREE->m_box, Aid, Bid)) {
 			return false;
 		}
 		if (A_TREE->is_leaf() && !B_TREE->is_leaf()) {
-			return is_collide(A_TREE, B_TREE->m_left) ||
-				is_collide(A_TREE, B_TREE->m_right);
+			return is_collide(A_TREE, B_TREE->m_left, Aid, Bid) ||
+				is_collide(A_TREE, B_TREE->m_right, Aid, Bid);
 		}
 		if (!A_TREE->is_leaf() && B_TREE->is_leaf()) {
-			return is_collide(A_TREE->m_left, B_TREE) ||
-				is_collide(A_TREE->m_right, B_TREE);
+			return is_collide(A_TREE->m_left, B_TREE, Aid, Bid) ||
+				is_collide(A_TREE->m_right, B_TREE, Aid, Bid);
 		}
-		return is_collide(A_TREE->m_left, B_TREE->m_left) ||
-			is_collide(A_TREE->m_left, B_TREE->m_right) ||
-			is_collide(A_TREE->m_right, B_TREE->m_left) ||
-			is_collide(A_TREE->m_right, B_TREE->m_right);
+		return is_collide(A_TREE->m_left, B_TREE->m_left, Aid, Bid) ||
+			is_collide(A_TREE->m_left, B_TREE->m_right, Aid, Bid) ||
+			is_collide(A_TREE->m_right, B_TREE->m_left, Aid, Bid) ||
+			is_collide(A_TREE->m_right, B_TREE->m_right, Aid, Bid);
 		
 		
 	}
@@ -570,6 +570,13 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 					else
 						scn->data_list[i].MyTranslate(Eigen::Vector3f(-6.5 - position(0), 0, 0));
 				}
+				if (position(2) < -15 || position(2) > 15) {
+					scn->data_list[i].direction << scn->data_list[i].direction(0), scn->data_list[i].direction(1), -scn->data_list[i].direction(2);
+					if (position(2) > 15)
+						scn->data_list[i].MyTranslate(Eigen::Vector3f(0, 0, 15-position(2)));
+					else
+						scn->data_list[i].MyTranslate(Eigen::Vector3f(0, 0, -15-position(2)));
+				}
 			}
 		    
 		}
@@ -581,9 +588,9 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 			
 			scn->data_list[scn->last_picked].set_colors(Eigen::RowVector3d(0, 0.2, 0.5));
 			if(scn->data_list[scn->last_picked].direction(1) > 0)
-				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) + 0.01 , 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) + 0.01 , scn->data_list[scn->last_picked].direction(2);
 			else
-				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) - 0.01, 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) - 0.01, scn->data_list[scn->last_picked].direction(2);
 			std::cout << "Tasty but not enough, I want more! -> +5 points" << std::endl;
 			scn->scoring = scn->scoring + 5;
 		}
@@ -591,9 +598,9 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 			
 			scn->data_list[scn->last_picked].set_colors(Eigen::RowVector3d(255.0 / 255.0, 228.0 / 255.0, 58.0 / 255.0));
 			if (scn->data_list[scn->last_picked].direction(1) > 0)
-				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0) + 0.05, scn->data_list[scn->last_picked].direction(1) + 0.01, 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0) + 0.05, scn->data_list[scn->last_picked].direction(1) + 0.01, scn->data_list[scn->last_picked].direction(2);
 			else
-				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0) - 0.05, scn->data_list[scn->last_picked].direction(1) - 0.01, 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0) - 0.05, scn->data_list[scn->last_picked].direction(1) - 0.01, scn->data_list[scn->last_picked].direction(2);
 			std::cout << "I want more from this! -> +10 points" << std::endl;
 			scn->scoring = scn->scoring + 10;
 		}
@@ -601,9 +608,9 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 			
 			scn->data_list[scn->last_picked].set_colors(Eigen::RowVector3d(0.9,0,0));
 			if (scn->data_list[scn->last_picked].direction(1) > 0)
-				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) + 0.01, 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) + 0.01, scn->data_list[scn->last_picked].direction(2) + 0.05;
 			else
-				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) - 0.01, 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) - 0.01, scn->data_list[scn->last_picked].direction(2) - 0.05;
 			std::cout << "Just one more bite! -> +15 points" << std::endl;
 			scn->scoring = scn->scoring + 15;
 		}
