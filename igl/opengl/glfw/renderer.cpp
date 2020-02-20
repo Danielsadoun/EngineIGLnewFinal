@@ -346,11 +346,11 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 			//dot(RE.NORMALIZE,RD.NORMALIZE)= 1*1*cos(angle between them)
 			double dot = RD.normalized().dot(RE.normalized());//scalar multiplication - cos of the angle between RE and RD because normalized
 			Eigen::Vector3f ED = (D - E);
+			if (dot > 1)
+				dot = 1;
+			else if (dot < -1)
+				dot = -1;
 			double angle = acos(dot);
-			if (angle > 1)
-				angle = 1;
-			else if (angle < -1)
-				angle = -1;
 			//we want that this rotate will be around normal and not around parents axis
 			scn->data(i).MyRotate(MakeParents(i).block<3, 3>(0, 0).inverse() * normal, angle / 10, false);
 			E = getTip();
