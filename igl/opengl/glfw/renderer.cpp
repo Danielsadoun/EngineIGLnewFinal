@@ -581,9 +581,9 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 			
 			scn->data_list[scn->last_picked].set_colors(Eigen::RowVector3d(0, 0.2, 0.5));
 			if(scn->data_list[scn->last_picked].direction(1) > 0)
-				scn->data_list[scn->last_picked].direction << 0, scn->data_list[scn->last_picked].direction(1) + 0.01 , 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) + 0.01 , 0;
 			else
-				scn->data_list[scn->last_picked].direction << 0, scn->data_list[scn->last_picked].direction(1) - 0.01, 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0), scn->data_list[scn->last_picked].direction(1) - 0.01, 0;
 			std::cout << "Tasty but not enough, I want more! -> +5 points" << std::endl;
 			scn->scoring = scn->scoring + 5;
 		}
@@ -591,9 +591,9 @@ IGL_INLINE void Renderer::resize(GLFWwindow* window,int w, int h)
 			
 			scn->data_list[scn->last_picked].set_colors(Eigen::RowVector3d(255.0 / 255.0, 228.0 / 255.0, 58.0 / 255.0));
 			if (scn->data_list[scn->last_picked].direction(1) > 0)
-				scn->data_list[scn->last_picked].direction << 0.05, scn->data_list[scn->last_picked].direction(1) + 0.01, 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0) + 0.05, scn->data_list[scn->last_picked].direction(1) + 0.01, 0;
 			else
-				scn->data_list[scn->last_picked].direction << -0.05, scn->data_list[scn->last_picked].direction(1) - 0.01, 0;
+				scn->data_list[scn->last_picked].direction << scn->data_list[scn->last_picked].direction(0) - 0.05, scn->data_list[scn->last_picked].direction(1) - 0.01, 0;
 			std::cout << "I want more from this! -> +10 points" << std::endl;
 			scn->scoring = scn->scoring + 10;
 		}
